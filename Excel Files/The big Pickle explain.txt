@@ -1,0 +1,2 @@
+in addition to the exprement date The big pickle has 'object to follow'. to unpack it use:
+object_pattern, bias, contrast, prior_knowledge, real_cor, object_range_cut, img_number, contrast, prior_knowledge, real_cor, object_range_cut, img_number, contrast, prior_knowledge, real_cor, object_range_cut, img_number = from_pickle_data
