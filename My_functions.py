@@ -303,10 +303,15 @@ def density_function(amplitude : float = 5, interface_width : float = 0.05,
         plt.show()
     return lambda x: mean_density_value - amplitude * scipy.special.erf(normalizer/interface_width*(x - center_of_interface))
 
-def load_density_profile_from_excel(excel_path=r"C:\Users\Morten\OneDrive - mail.tau.ac.il\Thesis\Shared Folder\Excel Files\Density profile.xlsx",
-                                    date = '2023-12-26', set_number = 1,
-                                    density_name = 'density [kg/m^3]', the_height = 'relative depth to camera [m]'):
-    df = pd.read_excel(excel_path)
+def load_density_profile_from_excel(
+    excel_path, 
+    date, 
+    set_number,
+    density_name = 'density [kg/m^3]', 
+    the_height = 'relative depth to camera [m]'
+    ):
+    
+    df = pd.read_excel(excel_path)                   
     df['date'] = pd.to_datetime(df['date'])
     df = df[df['set number'] == set_number]
     grouped_data = df.groupby('date')
