@@ -2,9 +2,12 @@ import My_functions as Mf
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
+from pathlib import Path
 
 # Your code for loading data and calculations...
-pickle_location = '.\\Analysis\\\\Excel Files\\The Big Pickle.pkl'
+
+current_path = Path.cwd()
+pickle_location = current_path / "Excel Files" / "The Big Pickle.pkl"
 the_pickle = Mf.load_pickle(pickle_location)
 
 current = the_pickle['Experiment Date 2023/12/13 Experiment Number 1 Record Number 1']
