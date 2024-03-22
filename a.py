@@ -7,6 +7,167 @@ import numpy as np
 from scipy.constants import g, pi
 
 
+plots_folder = '..\\Plots'
+excel_path = '.\\Analysis\\Excel Files\\Dimensionless Numbers PTV.xlsx'
+
+
+
+
+
+state_column = 'State'
+solution_column = 'Solution'
+date_column = 'Experiment Date'
+
+brunt1 = 'Brunt Number'
+Re_u1 = 'Upper Re'
+Re_l1 = 'Lower Re'
+Fr_u1 = 'Upper Fr'
+Fr_l1 = 'Lower Fr'
+nu_u1 = 'Upper viscosity [m^2/sec]'
+nu_l1 = 'Lower viscosity [m^2/sec]'
+rho_u1 = 'Upper density [kg/m^3]'
+rho_l1 = 'Lower density [kg/m^3]'
+U_min1 = 'Minimum velocity [m/s]'
+sphere_diameter1 = 'Sphere Diameter [m]'
+u_upper1 = 'Upper velocity [m/s]'
+rho_s1 = 'Calculated sphere density [kg/m^3]'
+interfacey1 = 'Interface width [m]'
+traj_time1 = 'Full Trajectory Time [sec]'
+
+
+
+df = pd.read_excel(excel_path)
+df = df[df[state_column] != 'no - minimum']
+
+
+# df.dropna(subset=[U_min1], inplace=True)
+
+
+color_mapping = {'minimum': 'red', 'no - minimum': 'blue', 'bouncing':  'green'}
+df['color'] = df[state_column].map(color_mapping)
+solution_mapping = {'Water - Salt' : 'P', 'Water - Glycerol' : 'o'}
+df['marker type'] = df[solution_column].map(solution_mapping)
+
+
+x_col = rho_u1
+y_col = rho_l1
+
+y_label = r'$\frac {mg \cdot U_u} {\nu_u \cdot \rho_u \cdot a^2}$'
+y_label = r'$\frac {\rho_{sphere}} {\rho_{lower}}$'
+x_label = r'${\rho}_{u}$'
+y_label = r'${\rho}_{l}$'
+
+
+
+# fig, ax = plt.subplots(figsize=(7, 7))
+
+
+
+# Create a figure and axis with specified size
+fig, ax = plt.subplots(figsize=(7, 7))
+
+# Create a 3D scatter plot
+ax = fig.add_subplot(111, projection='3d')
+
+groups = df.groupby(['color', 'marker type'])
+for (color, marker), group in groups:
+    ax.scatter(group[x_col], group[y_col],group[rho_s1], marker=marker, color=color)
+    # ax.scatter(group[x_col], group[y_col], marker=marker, color=color)
+
+
+legend_elements = [
+    Line2D([0], [0], color='w', label='minimum'),
+    Line2D([0], [0], color='w', label='no - minimum'),
+    Line2D([0], [0], color='w', label='bouncing'),
+    Line2D([0], [0], marker=solution_mapping.get('Water - Salt'), color='w', label='Water - Salt', markerfacecolor='black', markersize=8),
+    Line2D([0], [0], marker=solution_mapping.get('Water - Glycerol'), color='w', label='Water - Glycerol', markerfacecolor='black', markersize=8),
+]
+
+legend = plt.legend(handles=legend_elements, loc='best', framealpha = 0)
+
+# Color the legend text
+for ind, text in enumerate(legend.get_texts()):
+    if ind <=2:
+        text.set_color(color_mapping.get(text.get_text()))
+
+
+plt.xlabel(x_label)
+ylabel = plt.ylabel(y_label, rotation=0)
+ylabel.set_verticalalignment('bottom')  # Align at the bottom of the label
+ylabel.set_y(ylabel.get_position()[1] - 0.05)
+
+plt.show()
+stop 
+
+import My_functions as Mf
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+
+# Your code for loading data and calculations...
+pickle_location = '.\\Analysis\\\\Excel Files\\The Big Pickle.pkl'
+the_pickle = Mf.load_pickle(pickle_location)
+current = the_pickle['Experiment Date 2023/12/13 Experiment Number 1 Record Number 1']
+# print(current.keys())
+times = current['Velocity Times [sec] list']
+v_b = np.array(current['Velocity [m/s] list'])
+dt = 1/current['Frames Per Second']
+a = current['Sphere Diameter [m]']
+z_0 = current['Vertical Location For Velocity [m] list'][0]
+
+
+
+r1 = np.linspace(-0.15, 0.15, 100)
+z1 = np.linspace(0, 0.35, 100)
+r,z = np.meshgrid(r1, z1)
+
+
+# fig, ax = plt.subplots(figsize=(8,8))
+fig, ax = plt.subplots()
+# plt.subplots_adjust(bottom=0.1)  # Adjust the bottom to make room for the slider
+
+time_index = 0
+z_bar = z-(z_0 + np.trapz(v_b[:time_index], times[:time_index]))
+vb = v_b[time_index] #The velocity at a specific time. if we dont do that we have 3 dimentions, Z R T
+dzdt = vb*a**3*(-2*z_bar**2+r**2)/(2*(z_bar**2+r**2)**(5/2))
+drdt = -3*vb*a**3*z_bar*r/(2*(z_bar**2+r**2)**(5/2))
+
+# Create initial quiver plot
+quiv = ax.quiver(r, z, drdt, dzdt)
+
+plt.xlabel('r [m]')
+plt.ylabel('z [m]')
+plt.title('Velocity Field in Cylindrical Coordinates')
+
+# Add slider
+ax_times = plt.axes([0.2, 0.01, 0.6, 0.03])  # [left, bottom, width, height]
+slider_time = Slider(ax_times, 'Time', times[0], times[-1], valinit=times[0])
+
+def update(val):
+    new_time = slider_time.val  # Get the new time from the slider
+    time_index = np.abs(times - np.float64(new_time)).argmin()  # Find the index corresponding to the new time
+    z_bar = z-(z_0 + np.trapz(v_b[:time_index], times[:time_index]))
+    vb = v_b[time_index] 
+    dzdt = vb*a**3*(-2*z_bar**2+r**2)/(2*(z_bar**2+r**2)**(5/2))
+    drdt = -3*vb*a**3*z_bar*r/(2*(z_bar**2+r**2)**(5/2))
+    quiv.set_UVC(drdt, dzdt)  # Update velocity components
+    fig.canvas.draw_idle()  # Redraw the plot
+
+slider_time.on_changed(update)  # Call update function when slider value changes
+
+plt.show()
+
+stop
+
+import os
+import My_functions as Mf
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+import numpy as np
+from scipy.constants import g, pi
+
+
 excel_path = '.\\Analysis\\Excel Files\\Dimensionless Numbers PTV.xlsx'
 # print(os.path.abspath(excel_path))
 # s
@@ -411,7 +572,7 @@ from matplotlib.lines import Line2D
 import numpy as np
 from scipy.constants import g, pi
 
-excel_path = r"C:\Users\Morten\OneDrive - mail.tau.ac.il\Thesis\Shared Folder\Excel Files\Dimensionless Numbers PTV.xlsx"
+excel_path = '.\\Analysis\\Excel Files\\Dimensionless Numbers PTV.xlsx'
 
 state_column = 'State'
 date_column = 'Experiment Date'
